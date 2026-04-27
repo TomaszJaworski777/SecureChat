@@ -1,6 +1,7 @@
 ﻿using System.Windows.Controls;
 using Wpf.Ui.Controls;
 using SecureChat.Client.Views;
+using System.Windows.Media;
 
 namespace SecureChat.Client;
 

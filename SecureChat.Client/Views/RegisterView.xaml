@@ -7,32 +7,34 @@
             <TextBlock Text="Create the new account" FontSize="24" FontWeight="Bold"
                 HorizontalAlignment="Center" Margin="0,0,0,25"/>
 
-            <TextBlock Text="Username" FontSize="12" Opacity="0.7" Margin="0,0,0,6"/>
-            <ui:TextBox x:Name="UsernameBox" PlaceholderText="Enter your username" Margin="0,0,0,16">
+            <TextBlock Text="Username" FontSize="12" Opacity="0.7" Margin="0,0,0,6" Width="75" HorizontalAlignment="Left"/>
+            <ui:TextBox x:Name="UsernameBox" PlaceholderText="Enter your username" Margin="0,0,0,2" TextChanged="UsernameBox_TextChanged">
                 <ui:TextBox.Icon>
                     <ui:SymbolIcon Symbol="Person24"/>
                 </ui:TextBox.Icon>
             </ui:TextBox>
+            <TextBlock x:Name="UsernameError" Text="This username already exists." FontSize="12" Opacity="0.7" Margin="0,0,0,0" Foreground="Red" HorizontalAlignment="Right"/>
 
             <TextBlock Text="Password" FontSize="12" Opacity="0.7" Margin="0,0,0,6"/>
-            <ui:PasswordBox x:Name="PasswordBox" PlaceholderText="Enter your password" Margin="0,0,0,12">
+            <ui:PasswordBox x:Name="PasswordBox" PlaceholderText="Enter your password" Margin="0,0,0,12" TextChanged="PasswordBox_TextChanged">
                 <ui:PasswordBox.Icon>
                     <ui:SymbolIcon Symbol="Key24"/>
                 </ui:PasswordBox.Icon>
             </ui:PasswordBox>
-            <ui:PasswordBox x:Name="RepeatPasswordBox" PlaceholderText="Repeat your password" Margin="0,0,0,28">
+            <ui:PasswordBox x:Name="RepeatPasswordBox" PlaceholderText="Repeat your password" Margin="0,0,0,2" TextChanged="RepeatPasswordBox_TextChanged">
                 <ui:PasswordBox.Icon>
                     <ui:SymbolIcon Symbol="Key24"/>
                 </ui:PasswordBox.Icon>
             </ui:PasswordBox>
+            <TextBlock x:Name="PasswordError" Text="This username already exists." FontSize="12" Opacity="0.7" Margin="0,0,0,20" Foreground="Red" HorizontalAlignment="Right"/>
 
-            <ui:Button Content="REGISTER" Appearance="Primary"
+            <ui:Button x:Name="RegisterButton" Content="REGISTER" Appearance="Primary"
            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
            Padding="0,10" FontWeight="SemiBold" Margin="0,0,0,12" Click="Register_Click"/>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <TextBlock Text="Already have an account?" Opacity="0.5" FontSize="12" VerticalAlignment="Center"/>
-                <ui:Button Content="Sign in" Appearance="Transparent" Padding="6,1,6,2" BorderThickness="0" Margin="3,0,0,0" CornerRadius="10"
+                <ui:Button x:Name="SigninButton" Content="Sign in" Appearance="Transparent" Padding="6,1,6,2" BorderThickness="0" Margin="3,0,0,0" CornerRadius="10"
                FontSize="12" Click="SignIn_Click"/>
             </StackPanel>
             

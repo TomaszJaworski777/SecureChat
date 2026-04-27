@@ -11,27 +11,29 @@
                        HorizontalAlignment="Center" Margin="0,0,0,36"/>
 
             <TextBlock Text="Username" FontSize="12" Opacity="0.7" Margin="0,0,0,6"/>
-            <ui:TextBox x:Name="UsernameBox" PlaceholderText="Enter your username" Margin="0,0,0,16">
+            <ui:TextBox x:Name="UsernameBox" PlaceholderText="Enter your username" Margin="0,0,0,2" TextChanged="UsernameBox_TextChanged">
                 <ui:TextBox.Icon>
                     <ui:SymbolIcon Symbol="Person24"/>
                 </ui:TextBox.Icon>
             </ui:TextBox>
+            <TextBlock x:Name="UsernameError" Text="This username already exists." FontSize="12" Opacity="0.7" Margin="0,0,0,0" Foreground="Red" HorizontalAlignment="Right"/>
 
             <TextBlock Text="Password" FontSize="12" Opacity="0.7" Margin="0,0,0,6"/>
-            <ui:PasswordBox x:Name="PasswordBox" PlaceholderText="Enter your password" Margin="0,0,0,28">
+            <ui:PasswordBox x:Name="PasswordBox" PlaceholderText="Enter your password" Margin="0,0,0,2" TextChanged="PasswordBox_TextChanged">
                 <ui:PasswordBox.Icon>
                     <ui:SymbolIcon Symbol="Key24"/>
                 </ui:PasswordBox.Icon>
             </ui:PasswordBox>
+            <TextBlock x:Name="PasswordError" Text="This username already exists." FontSize="12" Opacity="0.7" Margin="0,0,0,20" Foreground="Red" HorizontalAlignment="Right"/>
 
-            <ui:Button Content="LOG IN" Appearance="Primary"
+            <ui:Button x:Name="LoginButton" Content="LOG IN" Appearance="Primary"
                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                        Padding="0,10" FontWeight="SemiBold" Margin="0,0,0,12"
                        Click="OnLoginClick"/>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <TextBlock Text="Don't have an account?" Opacity="0.5" FontSize="12" VerticalAlignment="Center"/>
-                <ui:Button Content="Register" Appearance="Transparent" Padding="6,1,6,2" BorderThickness="0" Margin="3,0,0,0" CornerRadius="10"
+                <ui:Button x:Name="RegisterButton" Content="Register" Appearance="Transparent" Padding="6,1,6,2" BorderThickness="0" Margin="3,0,0,0" CornerRadius="10"
                            FontSize="12" Click="OnRegisterClick"/>
             </StackPanel>
 
