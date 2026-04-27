@@ -1,3 +1,4 @@
+using SecureChat.Client.API;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Wpf.Ui.Controls;
@@ -28,17 +29,23 @@ public partial class LoginView : UserControl
         }
     }
 
+    private MainWindow _mainWindow;
+    private Auth _auth;
+
     private bool _isProcessing;
     private Brush _loginBrush;
     private Brush _registerBrush;
 
     private Brush _textBoxBrush;
 
-    public LoginView()
+    public LoginView(MainWindow mainWindow, Auth auth)
     {
         InitializeComponent();
 
-        MainWindow.Instance.Title.Title = "SecureChat - Login";
+        _mainWindow = mainWindow;
+        _auth = auth;
+
+        _mainWindow.TitleBar.Title = "SecureChat - Login";
 
         _loginBrush = LoginButton.Foreground;
         _registerBrush = RegisterButton.Foreground;
@@ -49,9 +56,20 @@ public partial class LoginView : UserControl
         ClearError(PasswordBox, PasswordError);
     }
 
-    private void OnLoginClick(object sender, System.Windows.RoutedEventArgs e)
+    private void Login_Click(object sender, System.Windows.RoutedEventArgs e)
     {
+        _ = ProcessLogin();
+    }
+
+    private async Task ProcessLogin() {
         IsProcessing = true;
+
+        if (string.IsNullOrWhiteSpace(UsernameBox.Text))
+        {
+            ThrowError(UsernameBox, UsernameError, "Username can't be empty");
+            IsProcessing = false;
+            return;
+        }
 
         if (string.IsNullOrWhiteSpace(PasswordBox.Password))
         {
@@ -60,12 +78,28 @@ public partial class LoginView : UserControl
             return;
         }
 
-        //MainWindow.Instance.Navigate(new ChatView());
+        switch (await _auth.LoginAsync(UsernameBox.Text, PasswordBox.Password))
+        {
+            case System.Net.HttpStatusCode.OK:
+                _mainWindow.Navigate(new ChatView(_mainWindow));
+                break;
+            case System.Net.HttpStatusCode.NotFound:
+                ThrowError(UsernameBox, UsernameError, "User doesn't exist");
+                IsProcessing = false;
+                break;
+            case System.Net.HttpStatusCode.Unauthorized:
+                ThrowError(PasswordBox, PasswordError, "Incorrect password");
+                IsProcessing = false;
+                break;
+            default:
+                IsProcessing = false;
+                break;
+        }
     }
 
-    private void OnRegisterClick(object sender, System.Windows.RoutedEventArgs e)
+    private void Register_Click(object sender, System.Windows.RoutedEventArgs e)
     {
-        MainWindow.Instance.Navigate(new RegisterView());
+        _mainWindow.Navigate(new RegisterView(_mainWindow, _auth));
     }
 
     private void ThrowError(Wpf.Ui.Controls.TextBox textBox, System.Windows.Controls.TextBlock? errorBlock, string message)
@@ -92,9 +126,11 @@ public partial class LoginView : UserControl
     private void PasswordBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         ClearError(PasswordBox, PasswordError);
+    }
 
-        if(string.IsNullOrWhiteSpace(PasswordBox.Password)) {
-            ThrowError(PasswordBox, PasswordError, "Password can't be empty");
-        }
+    private void UserControl_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Enter)
+            Login_Click(sender, e);
     }
 }

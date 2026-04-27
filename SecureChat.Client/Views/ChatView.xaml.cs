@@ -4,10 +4,14 @@ namespace SecureChat.Client.Views;
 
 public partial class ChatView : UserControl
 {
-    public ChatView()
+    private MainWindow _mainWindow;
+
+    public ChatView(MainWindow mainWindow)
     {
         InitializeComponent();
 
-        MainWindow.Instance.Title.Title = "SecureChat - Username";
+        _mainWindow = mainWindow;
+
+        _mainWindow.TitleBar.Title = "SecureChat - Username";
     }
 }

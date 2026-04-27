@@ -1,20 +1,18 @@
 ﻿using System.Windows.Controls;
 using Wpf.Ui.Controls;
 using SecureChat.Client.Views;
-using System.Windows.Media;
+using SecureChat.Client.API;
 
 namespace SecureChat.Client;
 
 public partial class MainWindow : FluentWindow
 {
-    public static MainWindow Instance { get; private set; } = null!;
-
     public MainWindow()
     {
-        Instance = this;
         InitializeComponent();
 
-        Navigate(new LoginView());
+        var auth = new Auth();
+        Navigate(new LoginView(this, auth));
     }
 
     public void Navigate(UserControl view)

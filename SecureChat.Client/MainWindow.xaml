@@ -6,6 +6,7 @@
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:local="clr-namespace:SecureChat.Client"
         mc:Ignorable="d"
+        Focusable="False"
         Title="MainWindow" Height="750" Width="900">
     <Grid>
         <Grid.RowDefinitions>
@@ -13,7 +14,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <ui:TitleBar x:Name="Title" Title="SecureChat" Padding="7" Height="30" Foreground="#777" Grid.Row="0"/>
-        <ContentControl x:Name="MainContent" Grid.Row="1"/>
+        <ui:TitleBar x:Name="TitleBar" Title="SecureChat" Padding="7" Height="30" Foreground="#777" Grid.Row="0" Focusable="False"/>
+        <ContentControl x:Name="MainContent" Grid.Row="1" Focusable="False"/>
     </Grid>
 </ui:FluentWindow>
