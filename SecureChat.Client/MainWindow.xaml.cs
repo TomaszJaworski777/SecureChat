@@ -1,23 +1,23 @@
-﻿using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+﻿using System.Windows.Controls;
+using Wpf.Ui.Controls;
+using SecureChat.Client.Views;
 
 namespace SecureChat.Client;
 
-/// <summary>
-/// Interaction logic for MainWindow.xaml
-/// </summary>
-public partial class MainWindow : Window
+public partial class MainWindow : FluentWindow
 {
+    public static MainWindow Instance { get; private set; } = null!;
+
     public MainWindow()
     {
+        Instance = this;
         InitializeComponent();
+
+        Navigate(new LoginView());
+    }
+
+    public void Navigate(UserControl view)
+    {
+        MainContent.Content = view;
     }
 }
