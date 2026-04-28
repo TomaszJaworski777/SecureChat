@@ -12,19 +12,19 @@ namespace SecureChat.Client.API
 
         public async Task<HttpStatusCode> LoginAsync(string username, string password)
         {
-            var response = await _http.PostAsJsonAsync("/login", new { Username = username, PasswordHash = HashPassword(password) });
+            var response = await _http.PostAsJsonAsync("/login", new { Username = username, UsernameHash = HashString(username), PasswordHash = HashString(password) });
             return response.StatusCode;
         }
 
         public async Task<HttpStatusCode> RegisterAsync(string username, string password)
         {
-            var response = await _http.PostAsJsonAsync("/register", new { Username = username, PasswordHash = HashPassword(password) });
+            var response = await _http.PostAsJsonAsync("/register", new { Username = username, UsernameHash = HashString(username), PasswordHash = HashString(password) });
             return response.StatusCode;
         }
 
-        private string HashPassword(string password)
+        private string HashString(string value)
         {
-            var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(password));
+            var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(value));
             return Convert.ToHexString(bytes).ToLower();
         }
     }
