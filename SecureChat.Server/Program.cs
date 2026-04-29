@@ -1,5 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using DotNetEnv;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 Env.Load("../.env");
 
@@ -15,6 +18,19 @@ var connectionString = $"Host={builder.Configuration["DB_HOST"]};" +
 
 builder.Services.AddDbContext<DatabaseContext>(options =>
     options.UseNpgsql(connectionString));
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(EncryptionService.JWT_Key),
+        ValidateIssuer = false,
+        ValidateAudience = false,
+    };
+});
+
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 

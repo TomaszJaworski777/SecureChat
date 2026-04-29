@@ -3,11 +3,13 @@ using System.Text;
 
 public static class EncryptionService
 {
-    private static readonly byte[] Key = Convert.FromBase64String(Environment.GetEnvironmentVariable("ENCRYPTION_KEY")!);
+    public static readonly byte[] AES_Key = Convert.FromBase64String(Environment.GetEnvironmentVariable("AES_KEY")!);
+    public static readonly byte[] HMAC_Key = Convert.FromBase64String(Environment.GetEnvironmentVariable("HMAC_KEY")!);
+    public static readonly byte[] JWT_Key = Convert.FromBase64String(Environment.GetEnvironmentVariable("JWT_KEY")!);
 
     public static string AES_Encrypt(string plaintext)
     {
-        using var aes = new AesGcm(Key, AesGcm.TagByteSizes.MaxSize);
+        using var aes = new AesGcm(AES_Key, AesGcm.TagByteSizes.MaxSize);
 
         var iv = RandomNumberGenerator.GetBytes(12);
         var plaintextBytes = Encoding.UTF8.GetBytes(plaintext);
@@ -21,7 +23,7 @@ public static class EncryptionService
 
     public static string AES_Decrypt(string encrypted)
     {
-        using var aes = new AesGcm(Key, AesGcm.TagByteSizes.MaxSize);
+        using var aes = new AesGcm(AES_Key, AesGcm.TagByteSizes.MaxSize);
 
         var data = Convert.FromBase64String(encrypted);
         var iv = data[..12];
@@ -44,7 +46,7 @@ public static class EncryptionService
     public static string HMAC_SHA256_Hash(string value)
     {
         var bytes = Encoding.UTF8.GetBytes(value);
-        var hashedBytes = HMACSHA256.HashData(Key, bytes);
+        var hashedBytes = HMACSHA256.HashData(HMAC_Key, bytes);
         return Convert.ToHexString(hashedBytes);
     }
 }

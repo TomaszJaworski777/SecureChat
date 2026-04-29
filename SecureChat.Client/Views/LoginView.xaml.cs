@@ -1,4 +1,3 @@
-using SecureChat.Client.API;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Wpf.Ui.Controls;
@@ -30,21 +29,17 @@ public partial class LoginView : UserControl
     }
 
     private MainWindow _mainWindow;
-    private Auth _auth;
 
     private bool _isProcessing;
     private Brush _loginBrush;
     private Brush _registerBrush;
-
     private Brush _textBoxBrush;
 
-    public LoginView(MainWindow mainWindow, Auth auth)
+    public LoginView(MainWindow mainWindow)
     {
         InitializeComponent();
 
         _mainWindow = mainWindow;
-        _auth = auth;
-
         _mainWindow.TitleBar.Title = "SecureChat - Login";
 
         _loginBrush = LoginButton.Foreground;
@@ -78,7 +73,7 @@ public partial class LoginView : UserControl
             return;
         }
 
-        switch (await _auth.LoginAsync(UsernameBox.Text, PasswordBox.Password))
+        switch (await _mainWindow.Client.LoginAsync(UsernameBox.Text, PasswordBox.Password))
         {
             case System.Net.HttpStatusCode.OK:
                 _mainWindow.Navigate(new ChatView(_mainWindow));
@@ -99,7 +94,7 @@ public partial class LoginView : UserControl
 
     private void Register_Click(object sender, System.Windows.RoutedEventArgs e)
     {
-        _mainWindow.Navigate(new RegisterView(_mainWindow, _auth));
+        _mainWindow.Navigate(new RegisterView(_mainWindow));
     }
 
     private void ThrowError(Wpf.Ui.Controls.TextBox textBox, System.Windows.Controls.TextBlock? errorBlock, string message)

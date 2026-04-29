@@ -16,7 +16,7 @@ public class Message
     public User Sender { get; set; } = null!;
     public int ReceiverId { get; set; }
     public User Receiver { get; set; } = null!;
-    public DateTime SendDate { get; set; }
+    public string SendDate { get; set; } = "";
 }
 
 public class DatabaseContext : DbContext

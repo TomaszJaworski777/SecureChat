@@ -7,7 +7,7 @@
         xmlns:local="clr-namespace:SecureChat.Client"
         mc:Ignorable="d"
         Focusable="False"
-        Title="MainWindow" Height="750" Width="900">
+        Title="MainWindow" Height="750" Width="1010" MinWidth="800">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>

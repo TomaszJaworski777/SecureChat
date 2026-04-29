@@ -1,0 +1,25 @@
+﻿<UserControl x:Class="SecureChat.Client.Views.ChatViewComponents.MessageEntry"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SecureChat.Client.Views.ChatViewComponents"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             mc:Ignorable="d">
+    <Grid x:Name="MessageRoot" Margin="150, 0, 20, 5" HorizontalAlignment="Right">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" x:Name="MessageUsername" Text="Username" Padding="10,0,10,2" FontSize="12" Foreground="#aaa"/>
+        <Border Grid.Row="1" x:Name="MessageBorder" Padding="9,3,9,5" Background="#2D7D46" CornerRadius="10">
+            <ui:TextBlock x:Name="MessageText" TextWrapping="Wrap" FontSize="13" LineHeight="18"
+                Text="Message content Message content Message content Message content Message content Message content Message content Message content Message content Message content Message content"
+                />          
+        </Border>
+
+        <TextBlock Grid.Row="2" x:Name="MessageDate" Text="12:45 PM" Padding="0,0,10,0" FontSize="9" HorizontalAlignment="Right"/>
+    </Grid>
+</UserControl>

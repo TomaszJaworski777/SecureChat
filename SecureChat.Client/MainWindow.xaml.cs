@@ -7,12 +7,14 @@ namespace SecureChat.Client;
 
 public partial class MainWindow : FluentWindow
 {
+    public ApiClient Client { get; private set; }
+
     public MainWindow()
     {
         InitializeComponent();
 
-        var auth = new Auth();
-        Navigate(new LoginView(this, auth));
+        Client = new ApiClient();
+        Navigate(new LoginView(this));
     }
 
     public void Navigate(UserControl view)

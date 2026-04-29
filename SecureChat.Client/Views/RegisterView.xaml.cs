@@ -33,21 +33,17 @@ public partial class RegisterView : UserControl
     }
 
     private MainWindow _mainWindow;
-    private Auth _auth;
 
     private bool _isProcessing = false;
     private Brush _registerBrush;
     private Brush _signinBrush;
-
     private Brush _textBoxBrush;
 
-    public RegisterView(MainWindow mainWindow, Auth auth)
+    public RegisterView(MainWindow mainWindow)
     {
         InitializeComponent();
 
         _mainWindow = mainWindow;
-        _auth = auth;
-
         _mainWindow.TitleBar.Title = "SecureChat - Register";
 
         _registerBrush = RegisterButton.Foreground;
@@ -67,7 +63,7 @@ public partial class RegisterView : UserControl
 
     private void SignIn_Click(object sender, System.Windows.RoutedEventArgs e)
     {
-        _mainWindow.Navigate(new LoginView(_mainWindow, _auth));
+        _mainWindow.Navigate(new LoginView(_mainWindow));
     }
 
     private async Task ProcessRegistration() {
@@ -95,7 +91,7 @@ public partial class RegisterView : UserControl
             return;
         }
 
-        switch (await _auth.RegisterAsync(UsernameBox.Text, PasswordBox.Password))
+        switch (await _mainWindow.Client.RegisterAsync(UsernameBox.Text, PasswordBox.Password))
         {
             case System.Net.HttpStatusCode.OK:
                 _mainWindow.Navigate(new ChatView(_mainWindow));
