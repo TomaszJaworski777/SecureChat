@@ -6,6 +6,7 @@ public class User
     public string Username { get; set; } = "";
     public string UsernameHash { get; set; } = "";
     public string PasswordHash { get; set; } = "";
+    public DateTime CreationDate { get; set; }
 }
 
 public class Message
@@ -16,7 +17,7 @@ public class Message
     public User Sender { get; set; } = null!;
     public int ReceiverId { get; set; }
     public User Receiver { get; set; } = null!;
-    public string SendDate { get; set; } = "";
+    public DateTime SendDate { get; set; }
 }
 
 public class DatabaseContext : DbContext

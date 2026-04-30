@@ -1,26 +1,27 @@
 using System.Windows.Controls;
 using System.Windows.Media;
+using static SecureChat.Client.API.ApiClient;
 
 namespace SecureChat.Client.Views.ChatViewComponents;
 
 public partial class ContactEntry : UserControl
 {
     private ChatView _chatView;
-    private int _contactId; //TODO: Change id to full user class
+    private Contact _contact;
 
-    public ContactEntry(ChatView chatView, int id, string username, bool isOnline, string lastMessage, string lastActivityDate)
+    public ContactEntry(ChatView chatView, Contact contact)
     {
         InitializeComponent();
 
         _chatView = chatView;
-        _contactId = id;
+        _contact = contact;
 
-        UsernameText.Text = username;
-        InitialText.Text = username.Length > 0 ? username.First().ToString().ToUpper() : "?";
-        LastMessageText.Text = lastMessage;
-        LastMessageDateText.Text = lastActivityDate;
-        OnlineIndicator.Visibility = isOnline ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
-        Avatar.Fill = new SolidColorBrush(GetAvatarColor(username));
+        UsernameText.Text = _contact.Username;
+        InitialText.Text = _contact.Username.Length > 0 ? _contact.Username.First().ToString().ToUpper() : "?";
+        LastMessageText.Text = _contact.LastMessage;
+        LastMessageDateText.Text = MainWindow.DateToString(_contact.LastMessageDate);
+        OnlineIndicator.Visibility = _contact.IsOnline ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+        Avatar.Fill = new SolidColorBrush(GetAvatarColor(_contact.Username));
     }
 
     private static Color GetAvatarColor(string username)
@@ -60,6 +61,6 @@ public partial class ContactEntry : UserControl
 
     private void Button_Click(object sender, System.Windows.RoutedEventArgs e)
     {
-        _chatView.SetCurrentMessageView(_contactId);
+        _chatView.SetCurrentMessageView(_contact);
     }
 }

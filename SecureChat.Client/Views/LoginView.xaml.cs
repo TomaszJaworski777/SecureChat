@@ -76,7 +76,8 @@ public partial class LoginView : UserControl
         switch (await _mainWindow.Client.LoginAsync(UsernameBox.Text, PasswordBox.Password))
         {
             case System.Net.HttpStatusCode.OK:
-                _mainWindow.Navigate(new ChatView(_mainWindow));
+                var contacts = await _mainWindow.Client.GetContactsAsync();
+                _mainWindow.Navigate(new ChatView(_mainWindow, contacts));
                 break;
             case System.Net.HttpStatusCode.NotFound:
                 ThrowError(UsernameBox, UsernameError, "User doesn't exist");

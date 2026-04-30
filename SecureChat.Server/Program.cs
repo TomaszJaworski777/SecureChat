@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using DotNetEnv;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 Env.Load("../.env");
 
@@ -59,7 +58,12 @@ using (var scope = app.Services.CreateScope()) {
     }
 }
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapLoginEndpoints();
 app.MapRegisterEndpoints();
+app.MapUserEndpoints();
+app.MapMessageEndpoints();
 
 app.Run();

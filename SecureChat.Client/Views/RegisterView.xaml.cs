@@ -94,7 +94,8 @@ public partial class RegisterView : UserControl
         switch (await _mainWindow.Client.RegisterAsync(UsernameBox.Text, PasswordBox.Password))
         {
             case System.Net.HttpStatusCode.OK:
-                _mainWindow.Navigate(new ChatView(_mainWindow));
+                var contacts = await _mainWindow.Client.GetContactsAsync();
+                _mainWindow.Navigate(new ChatView(_mainWindow, contacts));
                 break;
             case System.Net.HttpStatusCode.Conflict:
                 ThrowError(UsernameBox, UsernameError, "User already exists");

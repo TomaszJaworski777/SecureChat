@@ -17,6 +17,7 @@ public static class RegisterEndpoints
                 Username = EncryptionService.AES_Encrypt(request.Username),
                 UsernameHash = EncryptionService.HMAC_SHA256_Hash(request.UsernameHash),
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.PasswordHash),
+                CreationDate = DateTime.UtcNow
             };
 
             context.Users.Add(user);
@@ -36,8 +37,8 @@ public static class RegisterEndpoints
             };
 
             var token = tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));
-            return Results.Ok(new { id = user.Id, token });
-        });
+            return Results.Ok(new { token });
+        }).WithName("PostRegister");
     }
 }
 

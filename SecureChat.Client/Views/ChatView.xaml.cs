@@ -1,59 +1,45 @@
+using System;
 using System.Windows.Controls;
 using SecureChat.Client.Views.ChatViewComponents;
+using static SecureChat.Client.API.ApiClient;
 
 namespace SecureChat.Client.Views;
 
 public partial class ChatView : UserControl
 {
     private MainWindow _mainWindow;
-    private int _contactId;
+    private int _currentMessageId;
 
-    public ChatView(MainWindow mainWindow)
+    public ChatView(MainWindow mainWindow, List<Contact> contacts)
     {
         InitializeComponent();
 
         _mainWindow = mainWindow;
-        _mainWindow.TitleBar.Title = "SecureChat - Username";
+        _mainWindow.TitleBar.Title = "SecureChat";
 
-        AddPlaceholderContacts();
-    }
+        _ = SetProperUsername();
+        _ = LoadContactList(contacts);
 
-    private void AddPlaceholderContacts()
-    {
-        var contacts = new[]
-        {
-            ("Alice", 0,     true,  "Sure, see you then!",       "12:45 PM"),
-            ("Bob", 1,        true,  "Can you send me the file? Can you send me the file? Can you send me the file? Can you send me the file?", "11:30 AM"),
-            ("Charlie", 2,   false, "Thanks!",                   "Yesterday"),
-            ("Diana", 3,     false, "lol okay",                  "Monday"),
-            ("Eve", 4,       false, "Let me know",               "Apr 21"),
-            ("Anna", 5,     true,  "Sure, see you then!",       "12:45 PM"),
-            ("Boromir",  6,      true,  "Can you send me the file?", "11:30 AM"),
-            ("Coca-Cola", 7, false, "Thanks!", "Yesterday"),
-            ("Demon", 8, false, "lol okay", "Monday"),
-            ("Evelynn", 9, false, "Let me know", "Apr 21"),
-        };
-
-        foreach (var (username, id, isOnline, lastMessage, date) in contacts)
-        {
-            ContactsList.Children.Add(new ContactEntry(this, id, username, isOnline, lastMessage, date));
-        }
-
-        var random = new Random();
-        foreach (var (username, _, _, lastMessage, date) in contacts)
-        {
-            Messages.Children.Add(new MessageEntry(username, lastMessage, date, random.NextDouble() > 0.5));
-        }
-
-        MessagesScroll.UpdateLayout();
-        MessagesScroll.ScrollToBottom();
-    }
-
-    public void SetCurrentMessageView(int id) {
-        if (_contactId == id)
+        if (contacts == null || contacts.Count == 0)
             return;
 
-        _contactId = id;
+        _ = LoadMessagesList(contacts.First());
+    }
+
+    private async Task SetProperUsername()
+    {
+        var username = await _mainWindow.Client.GetUsernameAsync();
+        _mainWindow.TitleBar.Title = "SecureChat - " + username;
+    }
+
+    public void SetCurrentMessageView(Contact contact)
+    {
+        if (_currentMessageId == contact.ID)
+            return;
+
+        _currentMessageId = contact.ID;
+
+        _ = LoadMessagesList(contact);
     }
 
     private void SendButton_Click(object sender, System.Windows.RoutedEventArgs e)
@@ -67,5 +53,30 @@ public partial class ChatView : UserControl
     {
         if (e.Key == System.Windows.Input.Key.Enter)
             SendButton_Click(sender, e);
+    }
+
+    private async Task LoadContactList(List<Contact>? contacts = null)
+    {
+        var c = contacts ?? await _mainWindow.Client.GetContactsAsync();
+        ContactsList.Children.Clear();
+
+        foreach (var contact in c)
+        {
+            ContactsList.Children.Add(new ContactEntry(this, contact));
+        }
+    }
+
+    private async Task LoadMessagesList(Contact contact)
+    {
+        var messages = await _mainWindow.Client.GetMessagesAsync(contact.ID);
+        Messages.Children.Clear();
+
+        foreach (var message in messages)
+        {
+            var isOurs = message.SenderID != contact.ID;
+            Messages.Children.Add(new MessageEntry(message.SenderUsername, message.Content, MainWindow.DateToString(contact.LastMessageDate), isOurs));
+        }
+
+        ConversationTargetText.Text = contact.Username;
     }
 }

@@ -32,13 +32,8 @@ public static class LoginEndpoints {
             };
 
             var token = tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));
-            return Results.Ok(new { id = user.Id, token });
-        });
-
-        app.MapGet("/users", (DatabaseContext context) =>
-        {
-            return Results.Ok(context.Users.ToList());
-        });
+            return Results.Ok(new { token });
+        }).WithName("PostLogin");
     }
 }
 

@@ -21,4 +21,18 @@ public partial class MainWindow : FluentWindow
     {
         MainContent.Content = view;
     }
+
+    public static string DateToString(DateTime utcDate)
+    {
+        var local = utcDate.ToLocalTime();
+        var today = DateTime.Now.Date;
+
+        if (local.Date == today)
+            return local.ToString("h:mm tt");
+
+        if (local.Date == today.AddDays(-1))
+            return "Yesterday, " + local.ToString("h:mm tt");
+
+        return local.ToString("M/d/yyyy h:mm tt");
+    }
 }
