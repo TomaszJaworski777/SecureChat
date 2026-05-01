@@ -1,3 +1,6 @@
+using System;
+using System.Security.Cryptography;
+using System.Text;
 using System.Windows.Controls;
 using SecureChat.Client.Views.ChatViewComponents;
 using static SecureChat.Client.API.ApiClient;
@@ -19,7 +22,8 @@ public partial class ChatView : UserControl
         _ = SetProperUsername();
         _ = LoadContactList(contacts);
 
-        if (contacts == null || contacts.Count == 0) {
+        if (contacts == null || contacts.Count == 0)
+        {
             ConversationTargetText.Text = "";
             _currentMessageId = -1;
             return;
@@ -77,6 +81,16 @@ public partial class ChatView : UserControl
         {
             var isOurs = message.SenderID != contact.ID;
             Messages.Children.Add(new MessageEntry(message.SenderUsername, message.Content, MainWindow.DateToString(message.Date), isOurs));
+        }
+
+        if (!string.IsNullOrWhiteSpace(contact.PublicKey))
+        {
+            var a = Convert.FromBase64String(_mainWindow.Client.PublicKey);
+            var b = Convert.FromBase64String(contact.PublicKey);
+            byte[] mergedKey = _mainWindow.Client.PublicKey.CompareTo(contact.PublicKey) < 0 ? [.. a, .. b] : [.. b, .. a];
+            var fingerPrint = Convert.ToHexString(SHA256.HashData(mergedKey));
+
+            FingerprintText.Text = fingerPrint[..32];
         }
 
         ConversationTargetText.Text = contact.Username;

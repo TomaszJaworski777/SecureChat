@@ -30,7 +30,15 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <TextBlock x:Name="ConversationTargetText" Grid.Row="0" Text="Message Target" FontSize="16" FontWeight="SemiBold" Margin="10,0,16,10"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock x:Name="ConversationTargetText" Grid.Row="0" Grid.Column="0" Text="Message Target" FontSize="16" FontWeight="SemiBold" Margin="10,0,16,10"/>
+                <TextBlock x:Name="FingerprintText" Grid.Row="0" Grid.Column="1" Text="" FontSize="11" Margin="0,0,15,0" Foreground="#777"/>
+            </Grid>
 
             <ScrollViewer x:Name="MessagesScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto">
                 <StackPanel x:Name="Messages"/>
