@@ -1,4 +1,3 @@
-using System;
 using System.Windows.Controls;
 using SecureChat.Client.Views.ChatViewComponents;
 using static SecureChat.Client.API.ApiClient;
@@ -20,8 +19,11 @@ public partial class ChatView : UserControl
         _ = SetProperUsername();
         _ = LoadContactList(contacts);
 
-        if (contacts == null || contacts.Count == 0)
+        if (contacts == null || contacts.Count == 0) {
+            ConversationTargetText.Text = "";
+            _currentMessageId = -1;
             return;
+        }
 
         _ = LoadMessagesList(contacts.First());
     }
@@ -74,9 +76,11 @@ public partial class ChatView : UserControl
         foreach (var message in messages)
         {
             var isOurs = message.SenderID != contact.ID;
-            Messages.Children.Add(new MessageEntry(message.SenderUsername, message.Content, MainWindow.DateToString(contact.LastMessageDate), isOurs));
+            Messages.Children.Add(new MessageEntry(message.SenderUsername, message.Content, MainWindow.DateToString(message.Date), isOurs));
         }
 
         ConversationTargetText.Text = contact.Username;
+
+        MessagesScroll.ScrollToBottom();
     }
 }

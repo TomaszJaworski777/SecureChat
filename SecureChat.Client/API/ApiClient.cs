@@ -31,6 +31,8 @@ namespace SecureChat.Client.API
             public DateTime LastMessageDate { get; set; }
             [JsonPropertyName("isOnline")]
             public bool IsOnline { get; set; }
+            [JsonPropertyName("publicKey")]
+            public string PublicKey { get; set; } = "";
         }
 
         public class Message
@@ -49,11 +51,14 @@ namespace SecureChat.Client.API
             public DateTime Date { get; set; }
         }
 
+        public string PrivateKey { get; set; } = "";
+        public string PublicKey { get; set; } = "";
+
         private readonly HttpClient _http = new() { BaseAddress = new Uri("http://localhost:5000") };
 
         private string _authenticationToken = "";
 
-        private string _login = "";
+        private string _username = "";
         private string _password = "";
 
         public async Task<HttpStatusCode> LoginAsync(string username, string password)
@@ -65,9 +70,11 @@ namespace SecureChat.Client.API
                 var authResponse = await response.Content.ReadFromJsonAsync<Authentication>();
                 _authenticationToken = authResponse is null ? "" : authResponse.token;
 
-                _login = username;
+                _username = username;
                 _password = password;
                 _http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _authenticationToken);
+
+                GenerateMessageKeys(username, password);
             }
 
             return response.StatusCode;
@@ -75,14 +82,16 @@ namespace SecureChat.Client.API
 
         public async Task<HttpStatusCode> RegisterAsync(string username, string password)
         {
-            var response = await _http.PostAsJsonAsync("/register", new { Username = username, UsernameHash = HashString(username), PasswordHash = HashString(password) });
+            GenerateMessageKeys(username, password);
+
+            var response = await _http.PostAsJsonAsync("/register", new { Username = username, UsernameHash = HashString(username), PasswordHash = HashString(password), PublicKey = PublicKey });
 
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 var authResponse = await response.Content.ReadFromJsonAsync<Authentication>();
                 _authenticationToken = authResponse is null ? "" : authResponse.token;
 
-                _login = username;
+                _username = username;
                 _password = password;
                 _http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _authenticationToken);
             }
@@ -94,6 +103,9 @@ namespace SecureChat.Client.API
         {
             var response = await ResyncGet("/username");
 
+            if (response.StatusCode != HttpStatusCode.OK)
+                return string.Format($"ERROR - {response.StatusCode}");
+
             var usernameResponse = await response.Content.ReadFromJsonAsync<Username>();
             var username = usernameResponse is null ? "ERROR - " + response.StatusCode : usernameResponse.username;
 
@@ -103,6 +115,9 @@ namespace SecureChat.Client.API
         public async Task<List<Contact>> GetContactsAsync()
         {
             var response = await ResyncGet("/contacts");
+
+            if (response.StatusCode != HttpStatusCode.OK)
+                return new List<Contact>();
 
             var contactsReponse = await response.Content.ReadFromJsonAsync<List<Contact>>();
             var contacts = contactsReponse is null ? new List<Contact>() : contactsReponse;
@@ -114,6 +129,9 @@ namespace SecureChat.Client.API
         {
             var response = await ResyncGet("/messages");
 
+            if (response.StatusCode != HttpStatusCode.OK)
+                return new List<Message>();
+
             var messagesReponse = await response.Content.ReadFromJsonAsync<List<Message>>();
             var messages = messagesReponse is null ? new List<Message>() : messagesReponse;
 
@@ -123,6 +141,9 @@ namespace SecureChat.Client.API
         public async Task<List<Message>> GetMessagesAsync(int targetId)
         {
             var response = await ResyncGet("/messages/" + targetId);
+
+            if (response.StatusCode != HttpStatusCode.OK)
+                return new List<Message>();
 
             var messagesReponse = await response.Content.ReadFromJsonAsync<List<Message>>();
             var messages = messagesReponse is null ? new List<Message>() : messagesReponse;
@@ -135,7 +156,7 @@ namespace SecureChat.Client.API
 
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                if ((await LoginAsync(_login, _password)) == HttpStatusCode.OK)
+                if ((await LoginAsync(_username, _password)) == HttpStatusCode.OK)
                     return await ResyncGet(endpoint);
             }
 
@@ -146,6 +167,26 @@ namespace SecureChat.Client.API
         {
             var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(value));
             return Convert.ToHexString(bytes).ToLower();
+        }
+
+        private void GenerateMessageKeys( string username, string password ) {
+            var salt = Encoding.UTF8.GetBytes(username);
+            var seedKey = SHA256.HashData(Encoding.UTF8.GetBytes(username + password + salt.Length));
+            var seed = Rfc2898DeriveBytes.Pbkdf2(
+                    seedKey,
+                    salt,
+                    iterations: 600_000,
+                    HashAlgorithmName.SHA256,
+                    outputLength: 32
+                );
+
+            var ecdh = ECDiffieHellman.Create(new ECParameters { 
+                Curve = ECCurve.NamedCurves.nistP256,
+                D = seed,
+            });
+
+            PublicKey = Convert.ToBase64String(ecdh.PublicKey.ExportSubjectPublicKeyInfo());
+            PrivateKey = Convert.ToBase64String(ecdh.ExportPkcs8PrivateKey());
         }
     }
 }

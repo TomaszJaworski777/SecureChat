@@ -24,7 +24,7 @@ public static class MessageEndpoints
                 return Results.Unauthorized();
 
             var userId = int.Parse(idString);
-            var messages = await context.Messages.Where(x => x.SenderId == userId || x.ReceiverId == userId).OrderByDescending(x => x.SendDate).ToListAsync();
+            var messages = await context.Messages.Where(x => x.SenderId == userId || x.ReceiverId == userId).OrderBy(x => x.SendDate).ToListAsync();
             var result = new List<Message>();
 
             foreach (var message in messages)
@@ -59,7 +59,7 @@ public static class MessageEndpoints
             var userId = int.Parse(idString);
             var messages = await context.Messages.Where(x => 
                                 (x.SenderId == userId && x.ReceiverId == targetId) || (x.SenderId == targetId && x.ReceiverId == userId))
-                                .OrderByDescending(x => x.SendDate).ToListAsync();
+                                .OrderBy(x => x.SendDate).ToListAsync();
             var result = new List<Message>();
 
             foreach (var message in messages)

@@ -9,7 +9,9 @@ public static class RegisterEndpoints
     {
         app.MapPost("/register", async (RegisterRequest request, DatabaseContext context) =>
         {
-            if (await context.Users.CountAsync(x => x.UsernameHash == request.UsernameHash) > 0)
+            var usernameHash = EncryptionService.HMAC_SHA256_Hash(request.UsernameHash);
+
+            if (await context.Users.CountAsync(x => x.UsernameHash == usernameHash) > 0)
                 return Results.Conflict();
 
             var user = new User
@@ -17,6 +19,7 @@ public static class RegisterEndpoints
                 Username = EncryptionService.AES_Encrypt(request.Username),
                 UsernameHash = EncryptionService.HMAC_SHA256_Hash(request.UsernameHash),
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.PasswordHash),
+                PublicKey = EncryptionService.AES_Encrypt(request.PublicKey),
                 CreationDate = DateTime.UtcNow
             };
 
@@ -47,4 +50,5 @@ public class RegisterRequest
     public string Username { get; set; } = string.Empty;
     public string UsernameHash { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
+    public string PublicKey { get; set; } = string.Empty;
 }

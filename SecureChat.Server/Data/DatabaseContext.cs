@@ -6,6 +6,7 @@ public class User
     public string Username { get; set; } = "";
     public string UsernameHash { get; set; } = "";
     public string PasswordHash { get; set; } = "";
+    public string PublicKey { get; set; } = "";
     public DateTime CreationDate { get; set; }
 }
 

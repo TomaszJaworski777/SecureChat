@@ -10,6 +10,7 @@ public static class UserEndpoints
         public string lastMessage { get; set; } = "";
         public DateTime lastMessageDate { get; set; }
         public bool isOnline { get; set; } = false;
+        public string publicKey { get; set; } = "";
     }
 
     public static void MapUserEndpoints(this IEndpointRouteBuilder app)
@@ -56,10 +57,11 @@ public static class UserEndpoints
                     lastMessage = lastMessageContent,
                     lastMessageDate = lastMessageDate,
                     isOnline = false,
+                    publicKey = EncryptionService.AES_Decrypt(user.PublicKey),
                 });
             }
 
-            contacts.Sort((a, b) => a.lastMessageDate.CompareTo(b.lastMessageDate));
+            contacts.Sort((a, b) => b.lastMessageDate.CompareTo(a.lastMessageDate));
 
             return Results.Ok(contacts);
         }).RequireAuthorization()
