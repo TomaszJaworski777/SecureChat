@@ -24,7 +24,7 @@ public class EventHub : Hub {
 
         var userId = int.Parse(nameIdentifier);
         OnlineUsers.Add(userId);
-        //await Clients.Others.SendAsync("UserOnline", userId);
+        await Clients.Others.SendAsync("UserOnlineState", userId, true);
         await base.OnConnectedAsync();
     }
 
@@ -36,7 +36,7 @@ public class EventHub : Hub {
 
         var userId = int.Parse(nameIdentifier);
         OnlineUsers.Remove(userId);
-        //await Clients.Others.SendAsync("UserOffline", userId);
+        await Clients.Others.SendAsync("UserOnlineState", userId, false);
         await base.OnDisconnectedAsync(exception);
     }
 

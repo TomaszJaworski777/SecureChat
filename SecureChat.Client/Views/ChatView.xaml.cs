@@ -22,6 +22,48 @@ public partial class ChatView : UserControl
         _ = SetProperUsername();
         _ = LoadContactList(contacts);
 
+        _mainWindow.Client.RegisterUserOnlineCallback((contactId, state) =>
+        {
+            Dispatcher.Invoke(() =>
+            {
+                var contact = ContactsList.Children.OfType<ContactEntry>()
+                    .FirstOrDefault(entry => entry.ContactID == contactId);
+                if (contact is null)
+                    return;
+
+                contact.SetOnlineState(state);
+            });
+        });
+
+        _mainWindow.Client.RegisterNewUserCreatedCallback((contact) =>
+        {
+            Dispatcher.Invoke(() =>
+            {
+                ContactsList.Children.Add(new ContactEntry(this, contact));
+            });
+        });
+
+        _mainWindow.Client.RegisterMessageReceivedCallback((message) =>
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (_currentContact is null)
+                    return;
+
+                if (message.SenderID != _currentContact.ID)
+                    return;
+
+                Messages.Children.Add(new MessageEntry(message.SenderUsername, message.Content, MainWindow.DateToString(message.Date), false));
+            });
+        });
+
+        _mainWindow.Client.RegisterForceDisconnectCallback(() =>
+        {
+            Dispatcher.Invoke(() => {
+                _mainWindow.Navigate(new LoginView(_mainWindow));
+            });
+        });
+
         if (contacts == null || contacts.Count == 0)
         {
             ConversationTargetText.Text = "";
@@ -55,7 +97,7 @@ public partial class ChatView : UserControl
 
         MessageBox.Text = "";
 
-        if(_currentContact is not null)
+        if (_currentContact is not null)
             _ = _mainWindow.Client.SendMessageAsync(_currentContact, message);
     }
 

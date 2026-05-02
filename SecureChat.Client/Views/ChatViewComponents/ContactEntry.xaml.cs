@@ -6,6 +6,8 @@ namespace SecureChat.Client.Views.ChatViewComponents;
 
 public partial class ContactEntry : UserControl
 {
+    public int ContactID => _contact.ID;
+
     private ChatView _chatView;
     private Contact _contact;
 
@@ -20,8 +22,13 @@ public partial class ContactEntry : UserControl
         InitialText.Text = _contact.Username.Length > 0 ? _contact.Username.First().ToString().ToUpper() : "?";
         LastMessageText.Text = _contact.LastMessage;
         LastMessageDateText.Text = MainWindow.DateToString(_contact.LastMessageDate);
-        OnlineIndicator.Visibility = _contact.IsOnline ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
         Avatar.Fill = new SolidColorBrush(GetAvatarColor(_contact.Username));
+
+        SetOnlineState(contact.IsOnline);
+    }
+
+    public void SetOnlineState(bool state) {
+        OnlineIndicator.Visibility = state ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
     }
 
     private static Color GetAvatarColor(string username)

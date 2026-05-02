@@ -64,6 +64,8 @@ namespace SecureChat.Client.API
         private string _username = "";
         private string _password = "";
 
+        private Action? _disconnectCallback;
+
         public async Task ResetAsync() {
             _http.DefaultRequestHeaders.Authorization = null;
 
@@ -76,6 +78,8 @@ namespace SecureChat.Client.API
             _authenticationToken = "";
             _username = "";
             _password = "";
+
+            _disconnectCallback = null;
         }
 
         #region Endpoints
@@ -117,7 +121,13 @@ namespace SecureChat.Client.API
             _hub = new HubConnectionBuilder().WithUrl("http://localhost:5000/events", options =>
             {
                 options.AccessTokenProvider = () => Task.FromResult<string?>(_authenticationToken);
-            }).WithAutomaticReconnect().Build();
+            }).Build();
+
+            _hub.Closed += async (erorr) =>
+            {
+                _disconnectCallback?.Invoke();
+                await Task.CompletedTask;
+            };
 
             try
             {
@@ -258,20 +268,12 @@ namespace SecureChat.Client.API
             _hub.On("MessageReceived", callback);
         }
 
-        public void RegisterUserOnlineCallback(Action<int> callback)
+        public void RegisterUserOnlineCallback(Action<int, bool> callback)
         {
             if (_hub is null)
                 return;
 
-            _hub.On("UserOnline", callback);
-        }
-
-        public void RegisterUserOfflineCallback(Action<int> callback)
-        {
-            if (_hub is null)
-                return;
-
-            _hub.On("UserOffline", callback);
+            _hub.On("UserOnlineState", callback);
         }
 
         public void RegisterNewUserCreatedCallback(Action<Contact> callback)
@@ -282,12 +284,12 @@ namespace SecureChat.Client.API
             _hub.On("NewUserCreated", callback);
         }
 
-        public void RegisterForceDisconnectCallback(Action<Contact> callback)
+        public void RegisterForceDisconnectCallback(Action callback)
         {
             if (_hub is null)
                 return;
 
-            _hub.On("ForceDisconnect", callback);
+            _disconnectCallback += callback;
         }
         #endregion
     }
