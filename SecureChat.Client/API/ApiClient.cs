@@ -18,6 +18,7 @@ namespace SecureChat.Client.API
 
         private class Username
         {
+            public int id { get; set; }
             public string username { get; set; } = "";
         }
 
@@ -261,11 +262,11 @@ namespace SecureChat.Client.API
             }
         }
 
-        public void RegisterMessageReceivedCallback(Action<Message> callback) {
+        public void RegisterReceiveMessageCallback(Action<Message> callback) {
             if (_hub is null)
                 return;
 
-            _hub.On("MessageReceived", callback);
+            _hub.On("ReceiveMessage", callback);
         }
 
         public void RegisterUserOnlineCallback(Action<int, bool> callback)
@@ -286,7 +287,7 @@ namespace SecureChat.Client.API
 
         public void RegisterForceDisconnectCallback(Action callback)
         {
-            if (_hub is null)
+            if (_hub is null) 
                 return;
 
             _disconnectCallback += callback;

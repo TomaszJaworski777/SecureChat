@@ -1,4 +1,3 @@
-using System;
 using System.Security.Cryptography;
 using System.Text;
 using System.Windows.Controls;
@@ -11,6 +10,7 @@ public partial class ChatView : UserControl
 {
     private MainWindow _mainWindow;
     private Contact? _currentContact;
+    private string _username = "";
 
     public ChatView(MainWindow mainWindow, List<Contact> contacts)
     {
@@ -19,7 +19,7 @@ public partial class ChatView : UserControl
         _mainWindow = mainWindow;
         _mainWindow.TitleBar.Title = "SecureChat";
 
-        _ = SetProperUsername();
+        _ = LoadUsername();
         _ = LoadContactList(contacts);
 
         _mainWindow.Client.RegisterUserOnlineCallback((contactId, state) =>
@@ -27,11 +27,12 @@ public partial class ChatView : UserControl
             Dispatcher.Invoke(() =>
             {
                 var contact = ContactsList.Children.OfType<ContactEntry>()
-                    .FirstOrDefault(entry => entry.ContactID == contactId);
+                    .FirstOrDefault(entry => entry.Contact.ID == contactId);
                 if (contact is null)
                     return;
 
                 contact.SetOnlineState(state);
+                UpdateContactList();
             });
         });
 
@@ -40,26 +41,40 @@ public partial class ChatView : UserControl
             Dispatcher.Invoke(() =>
             {
                 ContactsList.Children.Add(new ContactEntry(this, contact));
+                UpdateContactList();
             });
         });
 
-        _mainWindow.Client.RegisterMessageReceivedCallback((message) =>
+        _mainWindow.Client.RegisterReceiveMessageCallback((message) =>
         {
             Dispatcher.Invoke(() =>
             {
                 if (_currentContact is null)
                     return;
 
+                var contactEntry = ContactsList.Children.OfType<ContactEntry>().FirstOrDefault(e => e.Contact.ID == message.SenderID);
+                if (contactEntry is null)
+                    return;
+
+                var contact = contactEntry.Contact;
+                if (contact is null)
+                    return;
+
+                contactEntry.UpdateLastMessage(DecryptMessage(contact, message.Content));
+
                 if (message.SenderID != _currentContact.ID)
                     return;
 
-                Messages.Children.Add(new MessageEntry(message.SenderUsername, message.Content, MainWindow.DateToString(message.Date), false));
+                DisplayMessage(contact, message, false);
+
+                UpdateContactList();
             });
         });
 
         _mainWindow.Client.RegisterForceDisconnectCallback(() =>
         {
-            Dispatcher.Invoke(() => {
+            Dispatcher.Invoke(() =>
+            {
                 _mainWindow.Navigate(new LoginView(_mainWindow));
             });
         });
@@ -71,14 +86,19 @@ public partial class ChatView : UserControl
             return;
         }
 
+        contacts = contacts
+                    .OrderByDescending(e => e.IsOnline)
+                    .ThenByDescending(e => e.LastMessageDate)
+                    .ToList();
+
         _currentContact = contacts.First();
         _ = LoadMessagesList(_currentContact);
     }
 
-    private async Task SetProperUsername()
+    private async Task LoadUsername()
     {
-        var username = await _mainWindow.Client.GetUsernameAsync();
-        _mainWindow.TitleBar.Title = "SecureChat - " + username;
+        _username = await _mainWindow.Client.GetUsernameAsync();
+        _mainWindow.TitleBar.Title = "SecureChat - " + _username;
     }
 
     public void SetCurrentMessageView(Contact contact)
@@ -97,8 +117,19 @@ public partial class ChatView : UserControl
 
         MessageBox.Text = "";
 
-        if (_currentContact is not null)
-            _ = _mainWindow.Client.SendMessageAsync(_currentContact, message);
+        if (_currentContact is null)
+            return;
+
+        Messages.Children.Add(new MessageEntry(_username, message, MainWindow.DateToString(DateTime.UtcNow), true));
+        MessagesScroll.ScrollToBottom();
+
+        var contactEntry = ContactsList.Children.OfType<ContactEntry>().FirstOrDefault(e => e.Contact.ID == _currentContact.ID);
+        if (contactEntry is not null && contactEntry.Contact is not null) {
+            contactEntry.UpdateLastMessage(message);
+            UpdateContactList();
+        }
+
+        _ = _mainWindow.Client.SendMessageAsync(_currentContact, message);
     }
 
     private void UserControl_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -112,8 +143,15 @@ public partial class ChatView : UserControl
         var c = contacts ?? await _mainWindow.Client.GetContactsAsync();
         ContactsList.Children.Clear();
 
-        foreach (var contact in c)
+        var sorted = c
+                    .OrderByDescending(e => e.IsOnline)
+                    .ThenByDescending(e => e.LastMessageDate)
+                    .ToList();
+
+        foreach (var contact in sorted)
         {
+            if (contact.LastMessage != "Start of the new conversation")
+                contact.LastMessage = DecryptMessage(contact, contact.LastMessage);
             ContactsList.Children.Add(new ContactEntry(this, contact));
         }
     }
@@ -126,7 +164,7 @@ public partial class ChatView : UserControl
         foreach (var message in messages)
         {
             var isOurs = message.SenderID != contact.ID;
-            Messages.Children.Add(new MessageEntry(message.SenderUsername, message.Content, MainWindow.DateToString(message.Date), isOurs));
+            DisplayMessage(contact, message, isOurs);
         }
 
         if (!string.IsNullOrWhiteSpace(contact.PublicKey))
@@ -142,5 +180,49 @@ public partial class ChatView : UserControl
         ConversationTargetText.Text = contact.Username;
 
         MessagesScroll.ScrollToBottom();
+    }
+
+    private void DisplayMessage(Contact contact, Message message, bool isOurs)
+    {
+        var content = DecryptMessage(contact, message.Content);
+        Messages.Children.Add(new MessageEntry(message.SenderUsername, content, MainWindow.DateToString(message.Date), isOurs));
+        MessagesScroll.ScrollToBottom();
+    }
+
+    private void UpdateContactList()
+    {
+        var sorted = ContactsList.Children
+                    .OfType<ContactEntry>()
+                    .OrderByDescending(e => e.Contact.IsOnline)
+                    .ThenByDescending(e => e.Contact.LastMessageDate)
+                    .ToList();
+
+        ContactsList.Children.Clear();
+
+        foreach (var entry in sorted) {
+            ContactsList.Children.Add(entry);
+        }
+    }
+
+    private string DecryptMessage(Contact contact, string message)
+    {
+        var privateEcdh = ECDiffieHellman.Create();
+        privateEcdh.ImportPkcs8PrivateKey(Convert.FromBase64String(_mainWindow.Client.PrivateKey), out _);
+
+        var publicEcdh = ECDiffieHellman.Create();
+        publicEcdh.ImportSubjectPublicKeyInfo(Convert.FromBase64String(contact.PublicKey), out _);
+
+        var sharedSecret = privateEcdh.DeriveKeyMaterial(publicEcdh.PublicKey);
+
+        var aes = new AesGcm(sharedSecret, AesGcm.TagByteSizes.MaxSize);
+        var data = Convert.FromBase64String(message);
+        var iv = data[..12];
+        var tag = data[12..28];
+        var encryptedMsg = data[28..];
+        var plainMsg = new byte[encryptedMsg.Length];
+
+        aes.Decrypt(iv, encryptedMsg, tag, plainMsg);
+
+        return Encoding.UTF8.GetString(plainMsg);
     }
 }

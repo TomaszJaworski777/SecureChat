@@ -4,7 +4,7 @@ using System.Security.Claims;
 
 public static class UserEndpoints
 {
-    private class Contact
+    public class Contact
     {
         public int id { get; set; }
         public string username { get; set; } = "";
@@ -61,8 +61,6 @@ public static class UserEndpoints
                     publicKey = EncryptionService.AES_Decrypt(user.PublicKey),
                 });
             }
-
-            contacts.Sort((a, b) => b.lastMessageDate.CompareTo(a.lastMessageDate));
 
             return Results.Ok(contacts);
         }).RequireAuthorization()

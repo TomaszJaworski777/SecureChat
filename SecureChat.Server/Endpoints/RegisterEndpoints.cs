@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -7,7 +8,7 @@ public static class RegisterEndpoints
 {
     public static void MapRegisterEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/register", async (RegisterRequest request, DatabaseContext context) =>
+        app.MapPost("/register", async (RegisterRequest request, DatabaseContext context, IHubContext<EventHub> eventHub) =>
         {
             var usernameHash = EncryptionService.HMAC_SHA256_Hash(request.UsernameHash);
 
@@ -40,6 +41,17 @@ public static class RegisterEndpoints
             };
 
             var token = tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));
+
+            await eventHub.Clients.All.SendAsync("NewUserCreated", new UserEndpoints.Contact
+            {
+                id = user.Id,
+                username = request.Username,
+                publicKey = request.PublicKey,
+                lastMessage = "Start of the new conversation",
+                lastMessageDate = DateTime.UtcNow,
+                isOnline = OnlineUsers.IsOnline(user.Id),
+            });
+
             return Results.Ok(new { token });
         }).WithName("PostRegister");
     }

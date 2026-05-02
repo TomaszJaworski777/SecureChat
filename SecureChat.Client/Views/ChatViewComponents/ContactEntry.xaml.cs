@@ -6,29 +6,36 @@ namespace SecureChat.Client.Views.ChatViewComponents;
 
 public partial class ContactEntry : UserControl
 {
-    public int ContactID => _contact.ID;
+    public Contact Contact { get; private set; }
 
     private ChatView _chatView;
-    private Contact _contact;
 
     public ContactEntry(ChatView chatView, Contact contact)
     {
         InitializeComponent();
 
         _chatView = chatView;
-        _contact = contact;
+        Contact = contact;
 
-        UsernameText.Text = _contact.Username;
-        InitialText.Text = _contact.Username.Length > 0 ? _contact.Username.First().ToString().ToUpper() : "?";
-        LastMessageText.Text = _contact.LastMessage;
-        LastMessageDateText.Text = MainWindow.DateToString(_contact.LastMessageDate);
-        Avatar.Fill = new SolidColorBrush(GetAvatarColor(_contact.Username));
+        UsernameText.Text = Contact.Username;
+        InitialText.Text = Contact.Username.Length > 0 ? Contact.Username.First().ToString().ToUpper() : "?";
+        LastMessageText.Text = Contact.LastMessage;
+        LastMessageDateText.Text = MainWindow.DateToString(Contact.LastMessageDate);
+        Avatar.Fill = new SolidColorBrush(GetAvatarColor(Contact.Username));
 
         SetOnlineState(contact.IsOnline);
     }
 
     public void SetOnlineState(bool state) {
         OnlineIndicator.Visibility = state ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+        Contact.IsOnline = state;
+    }
+
+    public void UpdateLastMessage(string message) {
+        Contact.LastMessage = message;
+        Contact.LastMessageDate = DateTime.UtcNow;
+        LastMessageText.Text = message;
+        LastMessageDateText.Text = MainWindow.DateToString(Contact.LastMessageDate);
     }
 
     private static Color GetAvatarColor(string username)
@@ -68,6 +75,6 @@ public partial class ContactEntry : UserControl
 
     private void Button_Click(object sender, System.Windows.RoutedEventArgs e)
     {
-        _chatView.SetCurrentMessageView(_contact);
+        _chatView.SetCurrentMessageView(Contact);
     }
 }
