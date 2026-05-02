@@ -61,6 +61,7 @@ namespace SecureChat.Client.API
         private HubConnection? _hub;
 
         private string _authenticationToken = "";
+        private DateTime _tokenExpiry = DateTime.MinValue;
 
         private string _username = "";
         private string _password = "";
@@ -112,6 +113,7 @@ namespace SecureChat.Client.API
         private async Task ProcessLoginAsync(HttpResponseMessage response, string username, string password) {
             var authResponse = await response.Content.ReadFromJsonAsync<Authentication>();
             _authenticationToken = authResponse is null ? "" : authResponse.token;
+            _tokenExpiry = DateTime.UtcNow.AddMinutes(5);
 
             _username = username;
             _password = password;
@@ -121,8 +123,8 @@ namespace SecureChat.Client.API
 
             _hub = new HubConnectionBuilder().WithUrl("http://localhost:5000/events", options =>
             {
-                options.AccessTokenProvider = () => Task.FromResult<string?>(_authenticationToken);
-            }).Build();
+                options.AccessTokenProvider = GetFreshTokenAsync;
+            }).WithAutomaticReconnect().Build();
 
             _hub.Closed += async (erorr) =>
             {
@@ -202,6 +204,31 @@ namespace SecureChat.Client.API
             }
 
             return response;
+        }
+
+        private async Task<string?> GetFreshTokenAsync()
+        {
+            if (DateTime.UtcNow < _tokenExpiry.AddSeconds(-30))
+                return _authenticationToken;
+
+            var response = await _http.PostAsJsonAsync("/login", new {
+                Username = _username,
+                UsernameHash = HashString(_username),
+                PasswordHash = HashString(_password)
+            });
+
+            if (response.StatusCode != HttpStatusCode.OK)
+                return _authenticationToken;
+
+            var auth = await response.Content.ReadFromJsonAsync<Authentication>();
+            if (auth is null)
+                return _authenticationToken;
+
+            _authenticationToken = auth.token;
+            _tokenExpiry = DateTime.UtcNow.AddMinutes(5);
+            _http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _authenticationToken);
+
+            return _authenticationToken;
         }
 
         private string HashString(string value)

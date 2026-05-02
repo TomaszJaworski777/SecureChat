@@ -214,7 +214,7 @@ public partial class ChatView : UserControl
 
         var sharedSecret = privateEcdh.DeriveKeyMaterial(publicEcdh.PublicKey);
 
-        var aes = new AesGcm(sharedSecret, AesGcm.TagByteSizes.MaxSize);
+        using var aes = new AesGcm(sharedSecret, AesGcm.TagByteSizes.MaxSize);
         var data = Convert.FromBase64String(message);
         var iv = data[..12];
         var tag = data[12..28];
