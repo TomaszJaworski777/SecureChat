@@ -46,6 +46,8 @@ public partial class RegisterView : UserControl
         _mainWindow = mainWindow;
         _mainWindow.TitleBar.Title = "SecureChat - Register";
 
+        _ = _mainWindow.Client.ResetAsync();
+
         _registerBrush = RegisterButton.Foreground;
         _signinBrush = SigninButton.Foreground;
 

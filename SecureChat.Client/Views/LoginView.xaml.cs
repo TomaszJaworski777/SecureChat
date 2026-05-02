@@ -42,6 +42,8 @@ public partial class LoginView : UserControl
         _mainWindow = mainWindow;
         _mainWindow.TitleBar.Title = "SecureChat - Login";
 
+        _ = _mainWindow.Client.ResetAsync();
+
         _loginBrush = LoginButton.Foreground;
         _registerBrush = RegisterButton.Foreground;
 
@@ -81,6 +83,10 @@ public partial class LoginView : UserControl
                 break;
             case System.Net.HttpStatusCode.NotFound:
                 ThrowError(UsernameBox, UsernameError, "User doesn't exist");
+                IsProcessing = false;
+                break;
+            case System.Net.HttpStatusCode.Conflict:
+                ThrowError(UsernameBox, UsernameError, "User is already logged in");
                 IsProcessing = false;
                 break;
             case System.Net.HttpStatusCode.Unauthorized:

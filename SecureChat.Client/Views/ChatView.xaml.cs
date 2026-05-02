@@ -10,7 +10,7 @@ namespace SecureChat.Client.Views;
 public partial class ChatView : UserControl
 {
     private MainWindow _mainWindow;
-    private int _currentMessageId;
+    private Contact? _currentContact;
 
     public ChatView(MainWindow mainWindow, List<Contact> contacts)
     {
@@ -25,11 +25,12 @@ public partial class ChatView : UserControl
         if (contacts == null || contacts.Count == 0)
         {
             ConversationTargetText.Text = "";
-            _currentMessageId = -1;
+            _currentContact = null;
             return;
         }
 
-        _ = LoadMessagesList(contacts.First());
+        _currentContact = contacts.First();
+        _ = LoadMessagesList(_currentContact);
     }
 
     private async Task SetProperUsername()
@@ -40,10 +41,10 @@ public partial class ChatView : UserControl
 
     public void SetCurrentMessageView(Contact contact)
     {
-        if (_currentMessageId == contact.ID)
+        if (_currentContact?.ID == contact.ID)
             return;
 
-        _currentMessageId = contact.ID;
+        _currentContact = contact;
 
         _ = LoadMessagesList(contact);
     }
@@ -53,6 +54,9 @@ public partial class ChatView : UserControl
         var message = MessageBox.Text;
 
         MessageBox.Text = "";
+
+        if(_currentContact is not null)
+            _ = _mainWindow.Client.SendMessageAsync(_currentContact, message);
     }
 
     private void UserControl_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)

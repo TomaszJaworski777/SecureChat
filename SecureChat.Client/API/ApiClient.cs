@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using Microsoft.AspNetCore.SignalR.Client;
+using System.Diagnostics;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
@@ -55,27 +57,37 @@ namespace SecureChat.Client.API
         public string PublicKey { get; set; } = "";
 
         private readonly HttpClient _http = new() { BaseAddress = new Uri("http://localhost:5000") };
+        private HubConnection? _hub;
 
         private string _authenticationToken = "";
 
         private string _username = "";
         private string _password = "";
 
+        public async Task ResetAsync() {
+            _http.DefaultRequestHeaders.Authorization = null;
+
+            if (_hub != null)
+            {
+                await _hub.DisposeAsync();
+                _hub = null;
+            }
+
+            _authenticationToken = "";
+            _username = "";
+            _password = "";
+        }
+
+        #region Endpoints
         public async Task<HttpStatusCode> LoginAsync(string username, string password)
         {
             var response = await _http.PostAsJsonAsync("/login", new { Username = username, UsernameHash = HashString(username), PasswordHash = HashString(password) });
 
+            if (response is null)
+                throw new NullReferenceException();
+
             if (response.StatusCode == HttpStatusCode.OK)
-            {
-                var authResponse = await response.Content.ReadFromJsonAsync<Authentication>();
-                _authenticationToken = authResponse is null ? "" : authResponse.token;
-
-                _username = username;
-                _password = password;
-                _http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _authenticationToken);
-
-                GenerateMessageKeys(username, password);
-            }
+                await ProcessLoginAsync(response, username, password);
 
             return response.StatusCode;
         }
@@ -87,16 +99,34 @@ namespace SecureChat.Client.API
             var response = await _http.PostAsJsonAsync("/register", new { Username = username, UsernameHash = HashString(username), PasswordHash = HashString(password), PublicKey = PublicKey });
 
             if (response.StatusCode == HttpStatusCode.OK)
-            {
-                var authResponse = await response.Content.ReadFromJsonAsync<Authentication>();
-                _authenticationToken = authResponse is null ? "" : authResponse.token;
-
-                _username = username;
-                _password = password;
-                _http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _authenticationToken);
-            }
+                await ProcessLoginAsync(response, username, password);
 
             return response.StatusCode;
+        }
+
+        private async Task ProcessLoginAsync(HttpResponseMessage response, string username, string password) {
+            var authResponse = await response.Content.ReadFromJsonAsync<Authentication>();
+            _authenticationToken = authResponse is null ? "" : authResponse.token;
+
+            _username = username;
+            _password = password;
+            _http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _authenticationToken);
+
+            GenerateMessageKeys(username, password);
+
+            _hub = new HubConnectionBuilder().WithUrl("http://localhost:5000/events", options =>
+            {
+                options.AccessTokenProvider = () => Task.FromResult<string?>(_authenticationToken);
+            }).WithAutomaticReconnect().Build();
+
+            try
+            {
+                await _hub.StartAsync();
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+            }
         }
 
         public async Task<string> GetUsernameAsync()
@@ -188,6 +218,78 @@ namespace SecureChat.Client.API
             PublicKey = Convert.ToBase64String(ecdh.PublicKey.ExportSubjectPublicKeyInfo());
             PrivateKey = Convert.ToBase64String(ecdh.ExportPkcs8PrivateKey());
         }
+        #endregion
+
+        #region Events
+        public async Task SendMessageAsync(Contact receiver, string message) {
+            var privateEcdh = ECDiffieHellman.Create();
+            privateEcdh.ImportPkcs8PrivateKey(Convert.FromBase64String(PrivateKey), out _);
+
+            var publicEcdh = ECDiffieHellman.Create();
+            publicEcdh.ImportSubjectPublicKeyInfo(Convert.FromBase64String(receiver.PublicKey), out _);
+
+            var sharedSecret = privateEcdh.DeriveKeyMaterial(publicEcdh.PublicKey);
+
+            using var aes = new AesGcm(sharedSecret, AesGcm.TagByteSizes.MaxSize);
+            var iv = RandomNumberGenerator.GetBytes(12);
+            var plain = Encoding.UTF8.GetBytes(message);
+            var cipher = new byte[plain.Length];
+            var tag = new byte[16];
+            aes.Encrypt(iv, plain, cipher, tag);
+
+            var encrypedMessage = Convert.ToBase64String([.. iv, .. tag, .. cipher]);
+
+            if (_hub is null)
+                return;
+
+            try
+            {
+                await _hub!.InvokeAsync("SendMessage", receiver.ID, encrypedMessage);
+            }
+            catch (Exception e) {
+                Debug.WriteLine(e);
+            }
+        }
+
+        public void RegisterMessageReceivedCallback(Action<Message> callback) {
+            if (_hub is null)
+                return;
+
+            _hub.On("MessageReceived", callback);
+        }
+
+        public void RegisterUserOnlineCallback(Action<int> callback)
+        {
+            if (_hub is null)
+                return;
+
+            _hub.On("UserOnline", callback);
+        }
+
+        public void RegisterUserOfflineCallback(Action<int> callback)
+        {
+            if (_hub is null)
+                return;
+
+            _hub.On("UserOffline", callback);
+        }
+
+        public void RegisterNewUserCreatedCallback(Action<Contact> callback)
+        {
+            if (_hub is null)
+                return;
+
+            _hub.On("NewUserCreated", callback);
+        }
+
+        public void RegisterForceDisconnectCallback(Action<Contact> callback)
+        {
+            if (_hub is null)
+                return;
+
+            _hub.On("ForceDisconnect", callback);
+        }
+        #endregion
     }
 }
 

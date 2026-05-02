@@ -18,6 +18,9 @@ public static class LoginEndpoints {
             if (!BCrypt.Net.BCrypt.Verify(request.PasswordHash, user.PasswordHash))
                 return Results.Unauthorized();
 
+            if (OnlineUsers.IsOnline(user.Id))
+                return Results.Conflict();
+
             var tokenHandler = new JwtSecurityTokenHandler();
             var tokenDescriptor = new SecurityTokenDescriptor
             {

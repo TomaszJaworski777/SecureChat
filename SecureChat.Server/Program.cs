@@ -27,9 +27,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ValidateIssuer = false,
         ValidateAudience = false,
     };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context => {
+            var token = context.Request.Query["access_token"];
+            if (!string.IsNullOrEmpty(token))
+                context.Token = token;
+            return Task.CompletedTask;
+        }
+    };
 });
 
 builder.Services.AddAuthorization();
+
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -60,6 +72,8 @@ using (var scope = app.Services.CreateScope()) {
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapHub<EventHub>("/events");
 
 app.MapLoginEndpoints();
 app.MapRegisterEndpoints();

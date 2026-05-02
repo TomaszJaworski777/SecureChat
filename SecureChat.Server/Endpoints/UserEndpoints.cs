@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
@@ -28,7 +29,7 @@ public static class UserEndpoints
         }).RequireAuthorization()
         .WithName("GetUsername");
 
-        app.MapGet("/contacts", async (ClaimsPrincipal claims, DatabaseContext context) =>
+        app.MapGet("/contacts", async (ClaimsPrincipal claims, DatabaseContext context, IHubContext<EventHub> hub) =>
         {
             var idString = claims.FindFirstValue(ClaimTypes.NameIdentifier);
             if (idString is null)
@@ -56,7 +57,7 @@ public static class UserEndpoints
                     username = EncryptionService.AES_Decrypt(user.Username),
                     lastMessage = lastMessageContent,
                     lastMessageDate = lastMessageDate,
-                    isOnline = false,
+                    isOnline = OnlineUsers.IsOnline(user.Id),
                     publicKey = EncryptionService.AES_Decrypt(user.PublicKey),
                 });
             }
