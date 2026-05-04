@@ -124,9 +124,9 @@ namespace SecureChat.Client.API
             _hub = new HubConnectionBuilder().WithUrl("http://localhost:5000/events", options =>
             {
                 options.AccessTokenProvider = GetFreshTokenAsync;
-            }).WithAutomaticReconnect().Build();
+            }).Build();
 
-            _hub.Closed += async (erorr) =>
+            _hub.Closed += async (error) =>
             {
                 _disconnectCallback?.Invoke();
                 await Task.CompletedTask;
